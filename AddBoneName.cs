@@ -24,6 +24,8 @@ public class AddBoneName : EditorWindow
     [SerializeField]
     int selected = 0;                                           // どこに付け足すのか選択
 
+    int groupID = 0;                                            // Undoをグループにするため
+
     SerializedObject so;                                        
 
     [MenuItem("MyTools/AddBoneName")]
@@ -47,6 +49,16 @@ public class AddBoneName : EditorWindow
         explainfoldingProperty = so.FindProperty("explainFolding");
         useFoldingProperty = so.FindProperty("useFolding");
         selectedProperty = so.FindProperty("selected");
+
+        // グループIDを保持
+        groupID = Undo.GetCurrentGroup();
+    }
+
+    private void OnDisable()
+    {
+        // Undoをグループ化
+        Undo.CollapseUndoOperations(groupID);
+
     }
 
     private void OnGUI()
@@ -105,11 +117,11 @@ public class AddBoneName : EditorWindow
                 }
 
                 // 付け足したのを消す
-                GUILayout.Label("付け足したのを消す");
-                if (GUILayout.Button("DeleteName"))
-                {
-                    DeleteName();
-                }
+                //GUILayout.Label("付け足したのを消す");
+                //if (GUILayout.Button("DeleteName"))
+                //{
+                //    DeleteName();
+                //}
 
                 // 説明
                 if (explainfoldingProperty.boolValue = EditorGUILayout.Foldout(explainfoldingProperty.boolValue, "説明", true))
@@ -130,7 +142,7 @@ public class AddBoneName : EditorWindow
                     EditorGUILayout.HelpBox("・付け足したい名前を入力\n" +
                         "・Head,Tailを選択。\n" +
                         "・hierarchyWindowで付け足したいオブジェクトを選択（複数選択可能）\n" +
-                        "・hierarchyWindowでの複数選択は shift + 左クリック" +
+                        "・hierarchyWindowでの複数選択は shift + 左クリック\n" +
                         "・getObjectを押す\n" +
                         "・取得オブジェクトに入っているか確認。\n" +
                         "・大丈夫ならAddName。前後にアンダーバーが自動でつきます。\n" +
@@ -175,6 +187,7 @@ public class AddBoneName : EditorWindow
                 {
                     return;
                 }
+
                 GUILayout.Label(targetObjects[i].name);
             }
         }
@@ -191,32 +204,25 @@ public class AddBoneName : EditorWindow
         }
 
         // Headの時
-        if (selectedProperty.intValue == 0)
+        for (int i = 0; i < targetObjects.Count; i++)
         {
-            for (int i = 0; i < targetObjects.Count; i++)
+            if (targetObjects[i] == null)
             {
-                if (targetObjects[i] == null)
-                {
-                    return;
-                }
+                return;
+            }
 
+            // Headの時
+            if (selectedProperty.intValue == 0)
+            {
+                Undo.RecordObject(targetObjects[i], "オブジェクトの名前変更");
                 targetObjects[i].name = addNameProperty.stringValue + "_" + targetObjects[i].name;
             }
-
-        }
-        // Tailの時
-        else if (selectedProperty.intValue == 1)
-        {
-            for (int i = 0; i < targetObjects.Count; i++)
+            // Tailの時
+            else if (selectedProperty.intValue == 1)
             {
-                if (targetObjects[i] == null)
-                {
-                    return;
-                }
-
+                Undo.RecordObject(targetObjects[i], "オブジェクトの名前変更");
                 targetObjects[i].name = targetObjects[i].name + "_" + addNameProperty.stringValue;
             }
-
         }
 
     }
@@ -225,8 +231,6 @@ public class AddBoneName : EditorWindow
     void DeleteName()
     {
         // Headの時
-        if (selectedProperty.intValue == 0)
-        {
             for (int i = 0; i < targetObjects.Count; i++)
             {
                 if (targetObjects[i] == null)
@@ -234,24 +238,17 @@ public class AddBoneName : EditorWindow
                     return;
                 }
 
-                targetObjects[i].name = targetObjects[i].name.Replace(addNameProperty.stringValue + "_", "");
-            }
-        }
-        // Tailの時
-        else if (selectedProperty.intValue == 1)
-        {
-            for (int i = 0; i < targetObjects.Count; i++)
-            {
-                if (targetObjects[i] == null)
+                // Headの時
+                if (selectedProperty.intValue == 0)
                 {
-                    return;
+                    targetObjects[i].name = targetObjects[i].name.Replace(addNameProperty.stringValue + "_", "");
+                }
+                // Tailの時
+                else if (selectedProperty.intValue == 1)
+                {
+                    targetObjects[i].name = targetObjects[i].name.Replace("_" + addNameProperty.stringValue, "");
                 }
 
-                targetObjects[i].name = targetObjects[i].name.Replace("_" + addNameProperty.stringValue , "");
             }
-
-        }
-
-
     }
 }
