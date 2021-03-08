@@ -28,7 +28,7 @@ public class AddBoneName : EditorWindow
 
     SerializedObject so;                                        
 
-    [MenuItem("MyTools/AddBoneName")]
+    [MenuItem("AyahaTools/AddBoneName")]
     static void Open()
     {
         // inspectorウィンドウの横につきます
